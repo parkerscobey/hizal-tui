@@ -1,0 +1,5 @@
+hizal
+*.exe
+*.test
+*.out
+.env
