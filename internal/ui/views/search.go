@@ -180,7 +180,10 @@ func (v SearchView) View() string {
 			inject = styles.InjectBadge.Render(" ↓")
 		}
 
-		title := chunk.QueryKey
+		title := chunk.Title
+		if title == "" {
+			title = chunk.QueryKey
+		}
 		if title == "" {
 			// Truncate content as title
 			content := chunk.Content
