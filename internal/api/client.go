@@ -48,15 +48,17 @@ func (c *Client) do(req *http.Request, out any) error {
 
 // Chunk represents a context chunk from the API
 type Chunk struct {
-	ID             string         `json:"id"`
-	Content        string         `json:"content"`
-	ChunkType      string         `json:"chunk_type"`
-	Scope          string         `json:"scope"`
-	QueryKey       string         `json:"query_key"`
+	ID             string          `json:"id"`
+	Title          string          `json:"title"`
+	Content        string          `json:"content"`
+	ChunkType      string          `json:"chunk_type"`
+	Scope          string          `json:"scope"`
+	QueryKey       string          `json:"query_key"`
 	InjectAudience *InjectAudience `json:"inject_audience"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	Version        int            `json:"version"`
+	Score          float64         `json:"score,omitempty"`
+	CreatedAt      time.Time       `json:"created_at"`
+	UpdatedAt      time.Time       `json:"updated_at"`
+	Version        int             `json:"version"`
 }
 
 type InjectAudience struct {
@@ -73,13 +75,13 @@ type InjectRule struct {
 }
 
 type SearchResponse struct {
-	Chunks []Chunk `json:"chunks"`
+	Results []Chunk `json:"results"`
 }
 
 // SearchChunks performs a semantic search
 func (c *Client) SearchChunks(query, scope string) ([]Chunk, error) {
 	params := url.Values{}
-	params.Set("q", query)
+	params.Set("query", query)
 	if scope != "" && scope != "all" {
 		params.Set("scope", scope)
 	}
@@ -93,7 +95,7 @@ func (c *Client) SearchChunks(query, scope string) ([]Chunk, error) {
 	if err := c.do(req, &result); err != nil {
 		return nil, err
 	}
-	return result.Chunks, nil
+	return result.Results, nil
 }
 
 // Health checks API connectivity
