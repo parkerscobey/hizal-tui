@@ -74,6 +74,17 @@ type InjectRule struct {
 	FocusTags      []string `json:"focus_tags,omitempty"`
 }
 
+type ChunkVersion struct {
+	Version    int       `json:"version"`
+	ChangeNote string    `json:"change_note,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+type ChunkDetail struct {
+	Chunk
+	Versions []ChunkVersion `json:"versions"`
+}
+
 type SearchResponse struct {
 	Results []Chunk `json:"results"`
 }
@@ -101,6 +112,29 @@ func (c *Client) SearchChunks(query, scope string) ([]Chunk, error) {
 // Health checks API connectivity
 func (c *Client) Health() error {
 	req, err := http.NewRequest("GET", c.baseURL+"/health", nil)
+	if err != nil {
+		return err
+	}
+	return c.do(req, nil)
+}
+
+// GetChunk fetches full chunk detail including versions
+func (c *Client) GetChunk(id string) (*ChunkDetail, error) {
+	req, err := http.NewRequest("GET", c.baseURL+"/v1/context/"+id, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var result ChunkDetail
+	if err := c.do(req, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// DeleteChunk deletes a chunk by ID
+func (c *Client) DeleteChunk(id string) error {
+	req, err := http.NewRequest("DELETE", c.baseURL+"/v1/context/"+id, nil)
 	if err != nil {
 		return err
 	}

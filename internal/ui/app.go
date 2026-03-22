@@ -17,6 +17,7 @@ type view int
 
 const (
 	viewSearch view = iota
+	viewDetail
 	viewSessions
 	viewProjects
 	viewAgents
@@ -48,6 +49,7 @@ type App struct {
 	focusedPanel  panel
 	sidebarCursor int
 	search        views.SearchView
+	detail        views.DetailView
 	width         int
 	height        int
 	showHelp      bool
@@ -76,6 +78,14 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		a.width = msg.Width
 		a.height = msg.Height
+
+	case views.ChunkDeletedMsg:
+		if msg.ID != "" {
+			a.activeView = viewSearch
+		}
+
+	case views.BackMsg:
+		a.activeView = viewSearch
 
 	case tea.KeyMsg:
 		// Global keybindings
@@ -144,8 +154,23 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if a.focusedPanel == panelMain {
 		switch a.activeView {
 		case viewSearch:
+			switch msg := msg.(type) {
+			case tea.KeyMsg:
+				if msg.String() == "enter" || msg.String() == " " {
+					if chunk := a.search.SelectedChunk(); chunk != nil {
+						a.detail = views.NewDetailView(a.client, *chunk)
+						a.activeView = viewDetail
+						return a, a.detail.Init()
+					}
+				}
+			}
 			var cmd tea.Cmd
 			a.search, cmd = a.search.Update(msg)
+			cmds = append(cmds, cmd)
+
+		case viewDetail:
+			var cmd tea.Cmd
+			a.detail, cmd = a.detail.Update(msg)
 			cmds = append(cmds, cmd)
 		}
 	}
@@ -205,6 +230,8 @@ func (a *App) mainView() string {
 	switch a.activeView {
 	case viewSearch:
 		content = a.search.View()
+	case viewDetail:
+		content = a.detail.View()
 	case viewSessions:
 		content = styles.Muted.Render("Sessions — coming soon")
 	case viewProjects:
